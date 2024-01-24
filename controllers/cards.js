@@ -54,15 +54,15 @@ const likeCard = (req, res) => {
       .send(card))
     .catch((err) => {
       if (err.name === 'CastError') {
-        res
+        return res
           .status(400)
           .send({ message: 'Переданы некорректные данные для постановки лайка' });
       } if (err.message === 'NotFoundError') {
-        res
+        return res
           .status(404)
           .send({ message: 'Передан несуществующий _id карточки' });
       }
-      res
+      return res
         .status(500)
         .send({ message: 'Ошибка по умолчанию.' });
     });
@@ -75,15 +75,15 @@ const dislikeCard = (req, res) => {
       .send(card))
     .catch((err) => {
       if (err.name === 'CastError') {
-        res
+        return res
           .status(400)
           .send({ message: 'Переданы некорректные данные для снятия лайка' });
       } if (err.message === 'NotFoundError') {
-        res
+        return res
           .status(404)
           .send({ message: 'Передан несуществующий _id карточки' });
       }
-      res
+      return res
         .status(500)
         .send({ message: 'Ошибка по умолчанию.' });
     });

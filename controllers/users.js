@@ -39,7 +39,7 @@ const getUserById = (req, res) => {
 };
 const createUser = (req, res) => {
   const { name, about, avatar } = req.body;
-  User.create({ name, about, avatar })
+  return User.create({ name, about, avatar })
     .then((user) => {
       res
         .status(200)
@@ -66,15 +66,15 @@ const updateInfo = (req, res) => {
       .send(user))
     .catch((err) => {
       if (err.name === 'ValidationError' || err.name === 'CastError') {
-        res
+        return res
           .status(400)
           .send({ message: 'Переданы некорректные данные при обновлении профиля' });
       } if (err.message === 'NotFoundError') {
-        res
+        return res
           .status(404)
           .send({ message: 'Пользователь с указанным _id не найден' });
       }
-      res
+      return res
         .status(500)
         .send({ message: 'Ошибка по умолчанию.' });
     });
@@ -88,15 +88,15 @@ const updateAvatar = (req, res) => {
     .then((user) => res.status(200).send(user))
     .catch((err) => {
       if (err.name === 'ValidationError' || err.name === 'CastError') {
-        res
+        return res
           .status(400)
           .send({ message: 'Переданы некорректные данные при обновлении аватара' });
       } if (err.message === 'NotFoundError') {
-        res
+        return res
           .status(404)
           .send({ message: 'Пользователь с указанным _id не найден' });
       }
-      res
+      return res
         .status(500)
         .send({ message: 'На сервере произошла ошибка' });
     });
