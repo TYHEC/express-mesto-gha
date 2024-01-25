@@ -42,7 +42,7 @@ const createUser = (req, res) => {
   return User.create({ name, about, avatar })
     .then((user) => {
       res
-        .status(200)
+        .status(201)
         .send(user);
     })
     .catch((error) => {
