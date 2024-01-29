@@ -1,19 +1,17 @@
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
-const getUsers = (req, res) => {
+const getUsers = (req, res, next) => {
   User.find()
     .then((users) => {
       res
         .status(200)
         .send(users);
     })
-    .catch(() => {
-      res
-        .status(500)
-        .send({ message: 'Ошибка по умолчанию.' });
-    });
+    .catch(next);
 };
-const getUserById = (req, res) => {
+const getUserById = (req, res, next) => {
   const { userId } = req.params;
   User.findById(userId).orFail(() => new Error('NotFoundError'))
     .then((user) => {
@@ -32,14 +30,19 @@ const getUserById = (req, res) => {
           .status(400)
           .send({ message: 'Передан не валидный ID' });
       }
-      return res
-        .status(500)
-        .send({ message: 'Ошибка по умолчанию.' });
+      return next(error);
     });
 };
 const createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-  return User.create({ name, about, avatar })
+  const {
+    name, about, avatar, email,
+  } = req.body;
+  bcrypt.hash(req.body.password, 10)
+    .then((hash) => {
+      User.create({
+        name, about, avatar, email, password: hash,
+      });
+    })
     .then((user) => {
       res
         .status(201)
@@ -50,6 +53,11 @@ const createUser = (req, res) => {
         return res
           .status(400)
           .send({ message: 'Переданы некорректные данные при создании пользователя.' });
+      }
+      if (error.code === 11000) {
+        return res
+          .status(409)
+          .send({ message: 'Поьзователь с таким email уже зарегистрирован' });
       }
       return res
         .status(500)
@@ -101,7 +109,40 @@ const updateAvatar = (req, res) => {
         .send({ message: 'На сервере произошла ошибка' });
     });
 };
+const login = (req, res, next) => {
+  const { email, password } = req.body;
 
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, 'some-secret-key', { expiresIn: '7d' });
+      res.status(200).send({ token });
+    })
+    .catch(next);
+};
+const getCurrentUserInfo = (req, res) => {
+  const { userId } = req.params;
+  User.findById(userId).orFail(() => new Error('NotFoundError'))
+    .then((user) => {
+      res
+        .status(200)
+        .send(user);
+    })
+    .catch((error) => {
+      if (error.message === 'NotFoundError') {
+        return res
+          .status(404)
+          .send({ message: ' Пользователь по указанному _id не найден' });
+      }
+      if (error.name === 'CastError') {
+        return res
+          .status(400)
+          .send({ message: 'Передан не валидный ID' });
+      }
+      return res
+        .status(500)
+        .send({ message: 'Ошибка по умолчанию.' });
+    });
+};
 module.exports = {
-  getUsers, getUserById, createUser, updateAvatar, updateInfo,
+  getUsers, getUserById, createUser, updateAvatar, updateInfo, login, getCurrentUserInfo,
 };

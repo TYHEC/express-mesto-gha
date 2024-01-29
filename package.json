@@ -12,9 +12,14 @@
   "author": "Artyom Akulov",
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "celebrate": "^15.0.3",
     "express": "^4.18.2",
     "helmet": "^7.1.0",
-    "mongoose": "^8.1.0"
+    "joi": "^17.12.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.1.0",
+    "validator": "^13.11.0"
   },
   "devDependencies": {
     "eslint": "^8.56.0",
