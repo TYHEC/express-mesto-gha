@@ -1,5 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const helmet = require('helmet');
+
 const { errors } = require('celebrate');
 const NotFoundError = require('./errors/notFoundError');
 
@@ -11,6 +13,7 @@ const auth = require('./middlewares/auth');
 const { loginValidation, createUserValidation } = require('./middlewares/validation');
 
 const app = express();
+app.use(helmet());
 app.use(express.json());
 
 app.post('/signin', loginValidation, login);

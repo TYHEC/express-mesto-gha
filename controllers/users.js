@@ -23,7 +23,6 @@ const getUserById = (req, res, next) => {
   })
     .then((user) => {
       res
-        .status(200)
         .send(user);
     })
     .catch((error) => {
@@ -85,10 +84,11 @@ const updateInfo = (req, res, next) => {
       .send(user))
     .catch((error) => {
       if (error.name === 'ValidationError' || error.name === 'CastError') {
-        throw new BadRequestError('Переданы некорректные данные при обновлении профиля');
+        next(new BadRequestError('Переданы некорректные данные при обновлении профиля'));
+      } else {
+        next(error);
       }
-    })
-    .catch(next);
+    });
 };
 
 const updateAvatar = (req, res, next) => {
@@ -101,11 +101,13 @@ const updateAvatar = (req, res, next) => {
     .then((user) => res.status(200).send(user))
     .catch((error) => {
       if (error.name === 'ValidationError' || error.name === 'CastError') {
-        throw new BadRequestError('Переданы некорректные данные при обновлении аватара');
+        next(new BadRequestError('Переданы некорректные данные при обновлении аватара'));
+      } else {
+        next(error);
       }
-    })
-    .catch(next);
+    });
 };
+
 const login = (req, res, next) => {
   const { email, password } = req.body;
 
@@ -126,12 +128,13 @@ const getCurrentUserInfo = (req, res, next) => {
       .send({ user }))
     .catch((err) => {
       if (err.name === 'CastError') {
-        throw new BadRequestError('Переданы некорректные данные');
+        next(new BadRequestError('Переданы некорректные данные'));
       } if (err.message === 'NotFoundError') {
-        throw new NotFoundError('Пользователь не найден');
+        next(new NotFoundError('Пользователь не найден'));
+      } else {
+        next(err);
       }
-    })
-    .catch(next);
+    });
 };
 
 module.exports = {
