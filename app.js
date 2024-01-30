@@ -13,20 +13,19 @@ const auth = require('./middlewares/auth');
 
 app.use(express.json());
 
-mongoose.connect('mongodb://127.0.0.1:27017/mestodb');
 app.use(helmet());
 app.post('/signin', login);
 app.post('/signup', createUser);
+app.use(auth);
 app.use(userRouter);
 app.use(cardRouter);
-app.use(errors());
-app.use(auth);
+
 app.use('*', (req, res, next) => {
   next(new NotFoundError('Такой страницы не существует'));
 });
-
-app.use((err, req, res, next) => {
-  const { statusCode = 500, message } = err;
+app.use(errors());
+app.use((error, req, res, next) => {
+  const { statusCode = 500, message } = error;
   res
     .status(statusCode)
     .send({
@@ -37,6 +36,7 @@ app.use((err, req, res, next) => {
 
   next();
 });
+mongoose.connect('mongodb://127.0.0.1:27017/mestodb');
 app.listen(PORT, () => {
   console.log(`App listening on port ${PORT}`);
 });
