@@ -8,12 +8,13 @@ const { userRouter } = require('./routes/users');
 const { cardRouter } = require('./routes/cards');
 const { login, createUser } = require('./controllers/users');
 const auth = require('./middlewares/auth');
+const { loginValidation, createUserValidation } = require('./middlewares/validation');
 
 const app = express();
 app.use(express.json());
 
-app.post('/signin', login);
-app.post('/signup', createUser);
+app.post('/signin', loginValidation, login);
+app.post('/signup', createUserValidation, createUser);
 app.use(auth);
 app.use(userRouter);
 app.use(cardRouter);
