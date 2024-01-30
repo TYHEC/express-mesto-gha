@@ -1,6 +1,7 @@
 const { celebrate, Joi } = require('celebrate');
 
-const regular = /^(https?:\/\/)?([\w-]{1,16}\.[\w-]{1,16})[^\s@]*$/gm;
+const regular = /^(https?:\/\/)?([\w-]{1,16}\.[\w-]{1,16})[^\s@]*$/m;
+
 const loginValidation = celebrate({
   body: Joi.object().keys({
     email: Joi.string().email().required(),
@@ -52,4 +53,5 @@ module.exports = {
   updateInfoValidation,
   createUserValidation,
   loginValidation,
+  regular,
 };

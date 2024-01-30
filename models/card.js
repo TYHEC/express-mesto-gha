@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { regular } = require('../middlewares/validation');
 
 const cardSchema = new mongoose.Schema(
   {
@@ -11,6 +12,13 @@ const cardSchema = new mongoose.Schema(
     link: {
       type: String,
       required: [true, 'Ссылка на картинку должна быть заполнена'],
+      validate: {
+        validator(url) {
+          return regular.test(url);
+        },
+        message: 'Некорректный URL',
+      },
+
     },
     owner: {
       type: mongoose.Schema.Types.ObjectId,

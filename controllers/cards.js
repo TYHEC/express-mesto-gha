@@ -1,15 +1,16 @@
 const Cards = require('../models/card');
+const NotFoundError = require('../errors/notFoundError');
+const BadRequestError = require('../errors/badRequestError');
+const ForbiddenError = require('../errors/forbiddenError');
 
-const getCards = (req, res) => {
+const getCards = (req, res, next) => {
   Cards.find({})
     .then((cards) => res
       .status(200)
       .send(cards))
-    .catch(() => res
-      .status(500)
-      .send({ message: 'Ошибка по умолчанию.' }));
+    .catch(next);
 };
-const createCard = (req, res) => {
+const createCard = (req, res, next) => {
   const { name, link } = req.body;
   Cards.create({ name, link, owner: req.user._id })
     .then((card) => {
@@ -19,78 +20,55 @@ const createCard = (req, res) => {
     })
     .catch((error) => {
       if (error.name === 'ValidationError') {
-        return res
-          .status(400)
-          .send({ message: 'Переданы некорректные данные при создании карточки.' });
+        throw new BadRequestError('Переданы некорректные данные при создании карточки');
       }
-      return res
-        .status(500)
-        .send({ message: 'Ошибка по умолчанию.' });
-    });
+    })
+    .catch(next);
 };
-const deleteCard = (req, res) => {
+
+const deleteCard = (req, res, next) => {
   const { cardId } = req.params;
 
-  return Cards.findByIdAndDelete(cardId).orFail(() => new Error('NotFoundError'))
-    .then((card) => res
-      .status(200)
-      .send(card))
-    .catch((error) => {
-      if (error.message === 'NotFoundError') {
-        return res
-          .status(404)
-          .send({ message: 'Карточка с указанным _id не найдена.' });
+  return Cards.findById(cardId)
+    .orFail(() => {
+      throw new NotFoundError('Карточка с указанным _id не найдена');
+    })
+    .then((card) => {
+      if (card.owner.toString() === req.user._id) {
+        Cards.findByIdAndRemove(cardId).then(() => res.status(200).send(card));
       }
-      if (error.name === 'CastError') {
-        return res
-          .status(400)
-          .send({ message: 'Переданы некорректные данные' });
-      }
-      return res
-        .status(500)
-        .send({ message: 'Ошибка по умолчанию.' });
-    });
+      throw new ForbiddenError('Чужую карточку нельзя удалить');
+    })
+    .catch(next);
 };
-const likeCard = (req, res) => {
+const likeCard = (req, res, next) => {
   Cards.findByIdAndUpdate(req.params.cardId, { $addToSet: { likes: req.user._id } }, { new: true })
-    .orFail(() => new Error('NotFoundError'))
+    .orFail(() => {
+      throw new NotFoundError('Передан несуществующий _id карточки');
+    })
     .then((card) => res
       .status(200)
       .send(card))
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res
-          .status(400)
-          .send({ message: 'Переданы некорректные данные для постановки лайка' });
-      } if (err.message === 'NotFoundError') {
-        return res
-          .status(404)
-          .send({ message: 'Передан несуществующий _id карточки' });
+        next(new BadRequestError('Переданы некорректные данные для постановки лайка'));
       }
-      return res
-        .status(500)
-        .send({ message: 'Ошибка по умолчанию.' });
+      next(err);
     });
 };
-const dislikeCard = (req, res) => {
+const dislikeCard = (req, res, next) => {
   Cards.findByIdAndUpdate(req.params.cardId, { $pull: { likes: req.user._id } }, { new: true })
-    .orFail(() => new Error('NotFoundError'))
+    .orFail(() => {
+      throw new NotFoundError('Передан несуществующий _id карточки');
+    })
     .then((card) => res
       .status(200)
       .send(card))
     .catch((err) => {
       if (err.name === 'CastError') {
-        return res
-          .status(400)
-          .send({ message: 'Переданы некорректные данные для снятия лайка' });
-      } if (err.message === 'NotFoundError') {
-        return res
-          .status(404)
-          .send({ message: 'Передан несуществующий _id карточки' });
+        next(new BadRequestError('Переданы некорректные данные для снятия лайка'));
       }
-      return res
-        .status(500)
-        .send({ message: 'Ошибка по умолчанию.' });
+      next(err);
     });
 };
 
