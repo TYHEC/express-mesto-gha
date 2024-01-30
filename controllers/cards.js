@@ -28,19 +28,30 @@ const createCard = (req, res, next) => {
 
 const deleteCard = (req, res, next) => {
   const { cardId } = req.params;
-
-  return Cards.findById(cardId)
+  const ownerId = req.user._id;
+  Cards.findById(cardId)
     .orFail(() => {
-      throw new NotFoundError('Карточка с указанным _id не найдена');
+      throw new NotFoundError('Передан несуществующий _id карточки');
     })
+    .populate(['owner', 'likes'])
     .then((card) => {
-      if (card.owner.toString() === req.user._id) {
-        Cards.findByIdAndRemove(cardId).then(() => res.status(200).send(card));
+      if (!card.owner.equals(ownerId)) {
+        throw new ForbiddenError('Невозможно удалить чужую карточку');
       }
-      throw new ForbiddenError('Чужую карточку нельзя удалить');
+      Cards.deleteOne(card)
+        .then(() => {
+          res.status(200).send({ data: card });
+        })
+        .catch(next);
     })
-    .catch(next);
+    .catch((error) => {
+      if (error.name === 'CastError') {
+        next(new BadRequestError('Переданы некорректные данные для удаления карточки'));
+      }
+      next(error);
+    });
 };
+
 const likeCard = (req, res, next) => {
   Cards.findByIdAndUpdate(req.params.cardId, { $addToSet: { likes: req.user._id } }, { new: true })
     .orFail(() => {
